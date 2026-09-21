@@ -3,90 +3,418 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Toma de Datos - Pádel</title>
+  <title>PadelStat Pro - Registro e Informe de Partido</title>
   <style>
-    * { box-sizing: border-box; font-family: system-ui, -apple-system, sans-serif; }
-    body { background-color: #0f172a; color: #f8fafc; margin: 0; padding: 20px; }
-    .container { max-width: 600px; margin: 0 auto; }
-    h1 { text-align: center; color: #38bdf8; font-size: 1.5rem; }
-    .card { background: #1e293b; border-radius: 12px; padding: 16px; margin-bottom: 16px; }
-    label { display: block; margin-bottom: 6px; font-weight: bold; color: #94a3b8; }
-    input, select { width: 100%; padding: 10px; margin-bottom: 12px; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: #fff; font-size: 1rem; }
-    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-    .btn { width: 100%; padding: 12px; border: none; border-radius: 8px; font-size: 1rem; font-weight: bold; cursor: pointer; }
-    .btn-primary { background: #0284c7; color: white; margin-top: 10px; }
-    .btn-success { background: #16a34a; color: white; }
-    .stat-btn { background: #334155; color: #f8fafc; padding: 10px; border: none; border-radius: 8px; font-size: 0.9rem; cursor: pointer; }
-    .stat-btn:active { background: #0284c7; }
-    table { width: 100%; border-collapse: collapse; margin-top: 12px; }
-    th, td { text-align: left; padding: 8px; border-bottom: 1px solid #334155; font-size: 0.85rem; }
+    :root {
+      --bg-main: #f1f5f9;
+      --card-bg: #ffffff;
+      --primary: #0d9488;
+      --primary-hover: #0f766e;
+      --accent-win: #22c55e;
+      --accent-enf: #ef4444;
+      --accent-f: #f59e0b;
+      --sidebar-bg: #1e293b;
+      --text-dark: #0f172a;
+      --text-muted: #64748b;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; }
+    body { background-color: var(--bg-main); color: var(--text-dark); display: flex; flex-direction: column; min-height: 100vh; }
+
+    /* Navegación de modo */
+    .top-nav { background: var(--sidebar-bg); color: white; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; }
+    .top-nav h1 { font-size: 1.2rem; color: #38bdf8; display: flex; align-items: center; gap: 8px; }
+    .nav-buttons { display: flex; gap: 10px; }
+    .nav-btn { background: #334155; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 0.9rem; }
+    .nav-btn.active, .nav-btn:hover { background: var(--primary); }
+
+    .view-container { display: none; padding: 20px; max-width: 1200px; margin: 0 auto; width: 100%; }
+    .view-container.active { display: block; }
+
+    /* VISTA 1: TOMA DE DATOS EN VIVO */
+    .live-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 20px; }
+    @media (max-width: 768px) { .live-grid { grid-template-columns: 1fr; } }
+
+    .player-card { background: var(--card-bg); border-radius: 12px; padding: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; }
+    .player-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .player-name-input { font-size: 1.1rem; font-weight: bold; border: 1px solid #cbd5e1; border-radius: 6px; padding: 6px 10px; width: 60%; }
+    .serve-toggle { display: flex; align-items: center; gap: 6px; font-size: 0.85rem; font-weight: 600; cursor: pointer; }
+
+    .player-body { display: flex; gap: 12px; align-items: center; }
+    .photo-upload { width: 80px; height: 100px; border-radius: 8px; background: #e2e8f0; display: flex; flex-direction: column; justify-content: center; align-items: center; cursor: pointer; overflow: hidden; position: relative; border: 2px dashed #cbd5e1; }
+    .photo-upload img { width: 100%; height: 100%; object-fit: cover; display: none; }
+    .photo-upload span { font-size: 0.75rem; color: var(--text-muted); text-align: center; padding: 4px; }
+    .photo-input { display: none; }
+
+    .action-buttons { flex: 1; display: flex; flex-direction: column; gap: 8px; }
+    .act-btn { border: none; padding: 10px; border-radius: 8px; font-weight: bold; color: white; cursor: pointer; font-size: 0.9rem; transition: transform 0.1s; }
+    .act-btn:active { transform: scale(0.97); }
+    .btn-win { background: var(--accent-win); }
+    .btn-enf { background: var(--accent-enf); }
+    .btn-f { background: var(--accent-f); }
+
+    .score-board { background: var(--sidebar-bg); color: white; border-radius: 12px; padding: 16px; text-align: center; margin-bottom: 20px; }
+    .score-points { font-size: 2.2rem; font-weight: 800; color: #38bdf8; margin: 8px 0; }
+    .score-sets { font-size: 1rem; color: #94a3b8; }
+
+    /* VISTA 2: INFORME DEL PARTIDO (DASHBOARD) */
+    .dashboard-header { text-align: center; margin-bottom: 24px; }
+    .dashboard-header h2 { font-size: 1.8rem; color: var(--primary); text-transform: uppercase; letter-spacing: 1px; }
+    .dashboard-header p { color: var(--text-muted); font-size: 0.95rem; }
+
+    .dash-grid { display: grid; grid-template-columns: 280px 1fr 300px; gap: 20px; }
+    @media (max-width: 1024px) { .dash-grid { grid-template-columns: 1fr; } }
+
+    .dash-card { background: var(--card-bg); border-radius: 12px; padding: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; margin-bottom: 16px; }
+    .dash-card-title { font-size: 0.85rem; font-weight: 700; color: white; background: var(--primary); padding: 6px 12px; border-radius: 6px; margin-bottom: 12px; display: inline-block; }
+
+    /* Jugadores en Informe */
+    .dash-player-item { display: flex; align-items: center; gap: 12px; padding: 8px 0; border-bottom: 1px solid #f1f5f9; }
+    .dash-player-img { width: 50px; height: 60px; border-radius: 6px; background: #cbd5e1; object-fit: cover; }
+    .dash-player-info { flex: 1; }
+    .dash-player-name { font-weight: bold; font-size: 0.95rem; }
+    .dash-player-pts { font-size: 1.2rem; font-weight: 800; color: var(--primary); }
+    .mvp-badge { background: #f59e0b; color: white; font-size: 0.65rem; font-weight: 800; padding: 2px 6px; border-radius: 4px; margin-left: 6px; }
+
+    /* Tabla comparativa */
+    .stats-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.9rem; }
+    .stats-table th { background: #f8fafc; color: var(--text-muted); padding: 8px; font-size: 0.8rem; border-bottom: 2px solid #e2e8f0; }
+    .stats-table td { padding: 10px 8px; text-align: center; border-bottom: 1px solid #f1f5f9; }
+    .stats-table tr td:nth-child(2) { font-weight: bold; color: var(--text-dark); background: #f8fafc; }
+
+    /* Gráficos Donut */
+    .donut-container { display: flex; flex-direction: column; align-items: center; margin-top: 12px; }
+    .donut-chart { width: 100px; height: 100px; border-radius: 50%; background: conic-gradient(var(--primary) 0% 44%, #e2e8f0 44% 100%); display: flex; justify-content: center; align-items: center; position: relative; }
+    .donut-chart::before { content: ""; width: 70px; height: 70px; background: white; border-radius: 50%; position: absolute; }
+    .donut-text { position: relative; font-weight: 800; font-size: 1rem; color: var(--primary); }
+
+    .bottom-legend { font-size: 0.75rem; color: var(--text-muted); text-align: center; margin-top: 16px; }
+
+    /* Estilos para impresión / PDF */
+    @media print {
+      .top-nav, .nav-buttons, .action-buttons, .photo-upload span { display: none !important; }
+      body { background: white; }
+      .view-container { display: block !important; padding: 0; }
+      #liveView { display: none !important; }
+      #reportView { display: block !important; }
+      .dash-card { border: 1px solid #ccc; box-shadow: none; }
+    }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h1>🎾 Registro de Partido - Pádel</h1>
 
-    <div class="card">
-      <label>Pareja A</label>
-      <input type="text" id="parejaA" value="Pareja 1">
-      
-      <label>Pareja B</label>
-      <input type="text" id="parejaB" value="Pareja 2">
+  <!-- Navegación Superior -->
+  <div class="top-nav">
+    <h1>🎾 PadelStat Pro</h1>
+    <div class="nav-buttons">
+      <button class="nav-btn active" onclick="switchView('liveView')">Toma de Datos</button>
+      <button class="nav-btn" onclick="switchView('reportView')">Informe del Partido</button>
+      <button class="nav-btn" style="background:#16a34a" onclick="window.print()">📥 Imprimir / Guardar PDF</button>
+      <button class="nav-btn" style="background:#0284c7" onclick="descargarCSV()">📄 CSV</button>
+    </div>
+  </div>
+
+  <!-- VISTA 1: TOMA DE DATOS EN VIVO -->
+  <div id="liveView" class="view-container active">
+    
+    <!-- Marcador -->
+    <div class="score-board">
+      <div>MARCADOR EN VIVO</div>
+      <div class="score-points" id="liveScore">00 - 00</div>
+      <div class="score-sets" id="liveSets">Set 1: 0 - 0</div>
     </div>
 
-    <div class="card">
-      <h3>Acción / Punto</h3>
-      <div class="grid">
-        <button class="stat-btn" onclick="registrar('Ganador (Smash)', 'A')">💥 Smash A</button>
-        <button class="stat-btn" onclick="registrar('Ganador (Smash)', 'B')">💥 Smash B</button>
-        <button class="stat-btn" onclick="registrar('Ganador (Volea)', 'A')">⚡ Volea A</button>
-        <button class="stat-btn" onclick="registrar('Ganador (Volea)', 'B')">⚡ Volea B</button>
-        <button class="stat-btn" onclick="registrar('Error Unforzado', 'A')">❌ Error A</button>
-        <button class="stat-btn" onclick="registrar('Error Unforzado', 'B')">❌ Error B</button>
+    <!-- Rejilla de Jugadores -->
+    <div class="live-grid">
+      <!-- Jugador 1 (Pareja A) -->
+      <div class="player-card">
+        <div class="player-header">
+          <input type="text" id="p1_name" class="player-name-input" value="Alex López">
+          <label class="serve-toggle">
+            <input type="radio" name="saque" value="1" checked> 🎾 Saque
+          </label>
+        </div>
+        <div class="player-body">
+          <div class="photo-upload" onclick="triggerFile('p1_file')">
+            <img id="p1_img" alt="Foto">
+            <span id="p1_label">Subir Foto</span>
+            <input type="file" id="p1_file" class="photo-input" accept="image/*" onchange="previewPhoto(this, 'p1_img', 'p1_label')">
+          </div>
+          <div class="action-buttons">
+            <button class="act-btn btn-win" onclick="registrarAccion(1, 'WIN')">PUNTO GANADOR</button>
+            <button class="act-btn btn-enf" onclick="registrarAccion(1, 'ENF')">ENF (Error No Forzado)</button>
+            <button class="act-btn btn-f" onclick="registrarAccion(1, 'F')">F (Error Forzado)</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Jugador 2 (Pareja A) -->
+      <div class="player-card">
+        <div class="player-header">
+          <input type="text" id="p2_name" class="player-name-input" value="Saúl Durán">
+          <label class="serve-toggle">
+            <input type="radio" name="saque" value="2"> 🎾 Saque
+          </label>
+        </div>
+        <div class="player-body">
+          <div class="photo-upload" onclick="triggerFile('p2_file')">
+            <img id="p2_img" alt="Foto">
+            <span id="p2_label">Subir Foto</span>
+            <input type="file" id="p2_file" class="photo-input" accept="image/*" onchange="previewPhoto(this, 'p2_img', 'p2_label')">
+          </div>
+          <div class="action-buttons">
+            <button class="act-btn btn-win" onclick="registrarAccion(2, 'WIN')">PUNTO GANADOR</button>
+            <button class="act-btn btn-enf" onclick="registrarAccion(2, 'ENF')">ENF (Error No Forzado)</button>
+            <button class="act-btn btn-f" onclick="registrarAccion(2, 'F')">F (Error Forzado)</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Jugador 3 (Pareja B) -->
+      <div class="player-card">
+        <div class="player-header">
+          <input type="text" id="p3_name" class="player-name-input" value="Jorge Abad">
+          <label class="serve-toggle">
+            <input type="radio" name="saque" value="3"> 🎾 Saque
+          </label>
+        </div>
+        <div class="player-body">
+          <div class="photo-upload" onclick="triggerFile('p3_file')">
+            <img id="p3_img" alt="Foto">
+            <span id="p3_label">Subir Foto</span>
+            <input type="file" id="p3_file" class="photo-input" accept="image/*" onchange="previewPhoto(this, 'p3_img', 'p3_label')">
+          </div>
+          <div class="action-buttons">
+            <button class="act-btn btn-win" onclick="registrarAccion(3, 'WIN')">PUNTO GANADOR</button>
+            <button class="act-btn btn-enf" onclick="registrarAccion(3, 'ENF')">ENF (Error No Forzado)</button>
+            <button class="act-btn btn-f" onclick="registrarAccion(3, 'F')">F (Error Forzado)</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Jugador 4 (Pareja B) -->
+      <div class="player-card">
+        <div class="player-header">
+          <input type="text" id="p4_name" class="player-name-input" value="Guillermo Vera">
+          <label class="serve-toggle">
+            <input type="radio" name="saque" value="4"> 🎾 Saque
+          </label>
+        </div>
+        <div class="player-body">
+          <div class="photo-upload" onclick="triggerFile('p4_file')">
+            <img id="p4_img" alt="Foto">
+            <span id="p4_label">Subir Foto</span>
+            <input type="file" id="p4_file" class="photo-input" accept="image/*" onchange="previewPhoto(this, 'p4_img', 'p4_label')">
+          </div>
+          <div class="action-buttons">
+            <button class="act-btn btn-win" onclick="registrarAccion(4, 'WIN')">PUNTO GANADOR</button>
+            <button class="act-btn btn-enf" onclick="registrarAccion(4, 'ENF')">ENF (Error No Forzado)</button>
+            <button class="act-btn btn-f" onclick="registrarAccion(4, 'F')">F (Error Forzado)</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- VISTA 2: INFORME DEL PARTIDO (DASHBOARD) -->
+  <div id="reportView" class="view-container">
+    <div class="dashboard-header">
+      <h2>INFORME DEL PARTIDO</h2>
+      <p>Resumen de las estadísticas del registro del encuentro</p>
+    </div>
+
+    <div class="dash-grid">
+      <!-- Columna Izquierda: Datos + Jugadores -->
+      <div>
+        <div class="dash-card">
+          <span class="dash-card-title">Datos del partido</span>
+          <p style="font-weight:bold; font-size:1.1rem;" id="matchTitle">Final Máster</p>
+          <p style="color:var(--text-muted); font-size:0.85rem;" id="matchDate">Fecha: Hoy</p>
+        </div>
+
+        <div class="dash-card">
+          <span class="dash-card-title">Jugadores</span>
+          <div id="dashPlayersList">
+            <!-- Generado dinámicamente -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Columna Central: Resultado + Tabla Comparativa -->
+      <div>
+        <div class="dash-card" style="text-align:center;">
+          <span class="dash-card-title">Resultado</span>
+          <div style="font-size:1.4rem; font-weight:800; margin:10px 0;" id="resTeamA">Pareja A: 6 | 7 | 6</div>
+          <div style="font-size:1.4rem; font-weight:800; color:var(--text-muted);" id="resTeamB">Pareja B: 3 | 5 | 4</div>
+        </div>
+
+        <div class="dash-card">
+          <table class="stats-table">
+            <thead>
+              <tr>
+                <th id="thTeamA">Pareja A</th>
+                <th>Equipo</th>
+                <th id="thTeamB">Pareja B</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td id="st_win_A">0</td><td>Puntos Ganadores (WIN)</td><td id="st_win_B">0</td></tr>
+              <tr><td id="st_enf_A">0</td><td>Errores No Forzados (ENF)</td><td id="st_enf_B">0</td></tr>
+              <tr><td id="st_f_A">0</td><td>Errores Forzados (F)</td><td id="st_f_B">0</td></tr>
+              <tr><td id="st_serve_A">0</td><td>Puntos ganados al saque</td><td id="st_serve_B">0</td></tr>
+              <tr><td id="st_gold_A">0/0</td><td>Puntos de oro ganados</td><td id="st_gold_B">0/0</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Columna Derecha: Gráficos -->
+      <div>
+        <div class="dash-card">
+          <span class="dash-card-title">Puntos de oro ganados</span>
+          <div class="donut-container">
+            <div class="donut-chart">
+              <span class="donut-text" id="goldPercent">50%</span>
+            </div>
+            <p style="font-size:0.85rem; color:var(--text-muted); margin-top:8px;" id="goldRatio">2/4 acumulados</p>
+          </div>
+        </div>
+
+        <div class="dash-card">
+          <span class="dash-card-title">Efectividad Global</span>
+          <div class="donut-container">
+            <div class="donut-chart" style="background: conic-gradient(var(--accent-win) 0% 60%, var(--accent-enf) 60% 100%);">
+              <span class="donut-text" id="effPercent">60%</span>
+            </div>
+            <p style="font-size:0.85rem; color:var(--text-muted); margin-top:8px;">Relación WIN vs ENF</p>
+          </div>
+        </div>
       </div>
     </div>
 
-    <div class="card">
-      <h3>Historial de Puntos</h3>
-      <table>
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Acción</th>
-            <th>Pareja</th>
-          </tr>
-        </thead>
-        <tbody id="historial"></tbody>
-      </table>
-      <button class="btn btn-primary" onclick="descargarCSV()">📥 Descargar CSV</button>
+    <div class="bottom-legend">
+      *WIN = Punto Ganador, ENF = Error No Forzado, F = Error Forzado
     </div>
   </div>
 
   <script>
-    let registros = [];
-    let contador = 1;
+    // Variables de estado
+    let stats = {
+      1: { win: 0, enf: 0, f: 0 },
+      2: { win: 0, enf: 0, f: 0 },
+      3: { win: 0, enf: 0, f: 0 },
+      4: { win: 0, enf: 0, f: 0 }
+    };
+    let historial = [];
 
-    function registrar(accion, pareja) {
-      const pA = document.getElementById('parejaA').value;
-      const pB = document.getElementById('parejaB').value;
-      const equipo = pareja === 'A' ? pA : pB;
+    function switchView(viewId) {
+      document.querySelectorAll('.view-container').forEach(v => v.classList.remove('active'));
+      document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById(viewId).classList.add('active');
+      if (viewId === 'reportView') actualizarInforme();
+    }
 
-      const item = { id: contador++, accion, equipo };
-      registros.push(item);
+    function triggerFile(inputId) {
+      document.getElementById(inputId).click();
+    }
 
-      const tbody = document.getElementById('historial');
-      const row = `<tr><td>${item.id}</td><td>${item.accion}</td><td>${item.equipo}</td></tr>`;
-      tbody.innerHTML = row + tbody.innerHTML;
+    function previewPhoto(input, imgId, labelId) {
+      if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          const img = document.getElementById(imgId);
+          img.src = e.target.result;
+          img.style.display = 'block';
+          document.getElementById(labelId).style.display = 'none';
+        }
+        reader.readAsDataURL(input.files[0]);
+      }
+    }
+
+    function registrarAccion(playerNum, tipo) {
+      if (tipo === 'WIN') stats[playerNum].win++;
+      if (tipo === 'ENF') stats[playerNum].enf++;
+      if (tipo === 'F') stats[playerNum].f++;
+
+      const saqueId = document.querySelector('input[name="saque"]:checked').value;
+      const pName = document.getElementById(`p${playerNum}_name`).value;
+
+      historial.push({
+        punto: historial.length + 1,
+        jugador: pName,
+        accion: tipo,
+        saqueJugador: document.getElementById(`p${saqueId}_name`).value
+      });
+
+      alert(`Registrado: ${tipo} de ${pName}`);
+    }
+
+    function actualizarInforme() {
+      const p1 = document.getElementById('p1_name').value;
+      const p2 = document.getElementById('p2_name').value;
+      const p3 = document.getElementById('p3_name').value;
+      const p4 = document.getElementById('p4_name').value;
+
+      document.getElementById('thTeamA').innerText = `${p1} / ${p2}`;
+      document.getElementById('thTeamB').innerText = `${p3} / ${p4}`;
+
+      // Cálculo de totales
+      const winA = stats[1].win + stats[2].win;
+      const winB = stats[3].win + stats[4].win;
+      const enfA = stats[1].enf + stats[2].enf;
+      const enfB = stats[3].enf + stats[4].enf;
+      const fA = stats[1].f + stats[2].f;
+      const fB = stats[3].f + stats[4].f;
+
+      document.getElementById('st_win_A').innerText = winA;
+      document.getElementById('st_win_B').innerText = winB;
+      document.getElementById('st_enf_A').innerText = enfA;
+      document.getElementById('st_enf_B').innerText = enfB;
+      document.getElementById('st_f_A').innerText = fA;
+      document.getElementById('st_f_B').innerText = fB;
+
+      // Calcular MVP (Jugador con más puntos ganadores netos)
+      let maxScore = -999;
+      let mvpPlayer = 1;
+      [1, 2, 3, 4].forEach(i => {
+        let score = stats[i].win - stats[i].enf;
+        if (score > maxScore) { maxScore = score; mvpPlayer = i; }
+      });
+
+      // Renderizar lista de jugadores en el informe
+      const players = [
+        { name: p1, img: document.getElementById('p1_img').src, pts: stats[1].win, id: 1 },
+        { name: p2, img: document.getElementById('p2_img').src, pts: stats[2].win, id: 2 },
+        { name: p3, img: document.getElementById('p3_img').src, pts: stats[3].win, id: 3 },
+        { name: p4, img: document.getElementById('p4_img').src, pts: stats[4].win, id: 4 }
+      ];
+
+      let listHTML = '';
+      players.forEach(p => {
+        const isMVP = p.id === mvpPlayer ? '<span class="mvp-badge">MVP</span>' : '';
+        const imgSrc = p.img || 'https://via.placeholder.com/50x60?text=Foto';
+        listHTML += `
+          <div class="dash-player-item">
+            <img class="dash-player-img" src="${imgSrc}">
+            <div class="dash-player-info">
+              <div class="dash-player-name">${p.name} ${isMVP}</div>
+              <div style="font-size:0.75rem; color:var(--text-muted);">WIN: ${stats[p.id].win} | ENF: ${stats[p.id].enf}</div>
+            </div>
+            <div class="dash-player-pts">${stats[p.id].win}</div>
+          </div>
+        `;
+      });
+      document.getElementById('dashPlayersList').innerHTML = listHTML;
     }
 
     function descargarCSV() {
-      let csv = "ID,Accion,Equipo\n";
-      registros.forEach(r => { csv += `${r.id},"${r.accion}","${r.equipo}"\n`; });
+      if (historial.length === 0) { alert('No hay puntos registrados aún.'); return; }
+      let csv = "Punto,Jugador,Accion,SaqueDe\n";
+      historial.forEach(h => { csv += `${h.punto},"${h.jugador}","${h.accion}","${h.saqueJugador}"\n`; });
       const blob = new Blob([csv], { type: 'text/csv' });
-      const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
-      a.setAttribute('href', url);
-      a.setAttribute('download', 'datos_padel.csv');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'informe_partido_padel.csv';
       a.click();
     }
   </script>
