@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Toma de Datos - Pádel</title>
+  <style>
+    * { box-sizing: border-box; font-family: system-ui, -apple-system, sans-serif; }
+    body { background-color: #0f172a; color: #f8fafc; margin: 0; padding: 20px; }
+    .container { max-width: 600px; margin: 0 auto; }
+    h1 { text-align: center; color: #38bdf8; font-size: 1.5rem; }
+    .card { background: #1e293b; border-radius: 12px; padding: 16px; margin-bottom: 16px; }
+    label { display: block; margin-bottom: 6px; font-weight: bold; color: #94a3b8; }
+    input, select { width: 100%; padding: 10px; margin-bottom: 12px; border-radius: 8px; border: 1px solid #334155; background: #0f172a; color: #fff; font-size: 1rem; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .btn { width: 100%; padding: 12px; border: none; border-radius: 8px; font-size: 1rem; font-weight: bold; cursor: pointer; }
+    .btn-primary { background: #0284c7; color: white; margin-top: 10px; }
+    .btn-success { background: #16a34a; color: white; }
+    .stat-btn { background: #334155; color: #f8fafc; padding: 10px; border: none; border-radius: 8px; font-size: 0.9rem; cursor: pointer; }
+    .stat-btn:active { background: #0284c7; }
+    table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+    th, td { text-align: left; padding: 8px; border-bottom: 1px solid #334155; font-size: 0.85rem; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🎾 Registro de Partido - Pádel</h1>
+
+    <div class="card">
+      <label>Pareja A</label>
+      <input type="text" id="parejaA" value="Pareja 1">
+      
+      <label>Pareja B</label>
+      <input type="text" id="parejaB" value="Pareja 2">
+    </div>
+
+    <div class="card">
+      <h3>Acción / Punto</h3>
+      <div class="grid">
+        <button class="stat-btn" onclick="registrar('Ganador (Smash)', 'A')">💥 Smash A</button>
+        <button class="stat-btn" onclick="registrar('Ganador (Smash)', 'B')">💥 Smash B</button>
+        <button class="stat-btn" onclick="registrar('Ganador (Volea)', 'A')">⚡ Volea A</button>
+        <button class="stat-btn" onclick="registrar('Ganador (Volea)', 'B')">⚡ Volea B</button>
+        <button class="stat-btn" onclick="registrar('Error Unforzado', 'A')">❌ Error A</button>
+        <button class="stat-btn" onclick="registrar('Error Unforzado', 'B')">❌ Error B</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Historial de Puntos</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Acción</th>
+            <th>Pareja</th>
+          </tr>
+        </thead>
+        <tbody id="historial"></tbody>
+      </table>
+      <button class="btn btn-primary" onclick="descargarCSV()">📥 Descargar CSV</button>
+    </div>
+  </div>
+
+  <script>
+    let registros = [];
+    let contador = 1;
+
+    function registrar(accion, pareja) {
+      const pA = document.getElementById('parejaA').value;
+      const pB = document.getElementById('parejaB').value;
+      const equipo = pareja === 'A' ? pA : pB;
+
+      const item = { id: contador++, accion, equipo };
+      registros.push(item);
+
+      const tbody = document.getElementById('historial');
+      const row = `<tr><td>${item.id}</td><td>${item.accion}</td><td>${item.equipo}</td></tr>`;
+      tbody.innerHTML = row + tbody.innerHTML;
+    }
+
+    function descargarCSV() {
+      let csv = "ID,Accion,Equipo\n";
+      registros.forEach(r => { csv += `${r.id},"${r.accion}","${r.equipo}"\n`; });
+      const blob = new Blob([csv], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.setAttribute('href', url);
+      a.setAttribute('download', 'datos_padel.csv');
+      a.click();
+    }
+  </script>
+</body>
+</html>
